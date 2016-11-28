@@ -1,0 +1,30 @@
+f = 'space/linus.txt'
+g = 'space/numbus.txt'
+h = 'space/numlus.txt'
+
+def dicter(y):
+    z = open(y,'r')
+    d = {}
+    for line in z:
+        line = line.split(",")
+        if line[1]== '\xe1\xbc\x80\xce\xbd-':
+            print "YES!"
+        d[line[1]] = line[0]
+    return d
+
+def replacer(ys,d,yt):
+    zs = open(ys,'r')
+    zt = open(yt,'w')
+    n = 0
+    for line in zs:
+        if n%10000 == 0:
+            print n
+        n += 1
+        line = line.split()
+        for thing in line:
+            zt.write(d[str(thing)] + ",")
+        zt.write("\n")
+
+d = dicter(g)
+print "DICTIONARY BUILT"
+replacer(f,d,h)

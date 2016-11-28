@@ -1,0 +1,198 @@
+import numpy as np
+import re
+from copy import deepcopy
+from time import sleep
+from conceptnet5.query import query
+from nltk.corpus import wordnet as wn
+import inflect
+
+f = 'space/tallus.txt'
+g = 'space/numbus.txt'
+#h = '/home/masteradamo/academy/QueenMerrily/metamatic/corpora/DBpedia/DBstract'
+
+peng = inflect.engine()
+
+def translater(y):
+    tr = {}
+    z = open(y,'r')
+    for line in z:
+        line = line.split(",")
+        tr[line[1]] = line[0]
+    return tr
+
+def numberer(y,l):
+    rt = [0]*l
+    z = open(y,'r')
+    for line in z:
+        line = line.split(",")
+        rt[int(line[0])] = line[1]
+    return rt
+
+def vecter(y,x):
+    words = []
+    for thing in x:
+        words.append(tr[thing])
+    vecs = []
+    z = open(y,'r')
+    n = 0
+    for line in z:
+        if len(vecs) < len(words):
+            if str(n+1) in words:
+                print rt[n+1],"FOUND"
+                line = line[:-2].split("::",1)
+                vecs.append(line[1])
+            n += 1
+        else:
+            break
+    z.close()
+    return vecs
+
+def grouper(vecs):
+    tal = {}
+    for vec in vecs:
+        vec = vec.split(",")
+        for item in vec:
+            item = item.split(":")
+            if item[0] in tal:
+                tal[item[0]].append(float(item[1]))
+            else:
+                tal[item[0]] = [float(item[1])]
+    print "VECS GROUPED"
+    return tal
+
+def cutter(tal,l):
+    print str(len(tal)) + " DIMENSIONS CONSIDERED IN TOTAL"
+    cuts = []
+    for thing in tal:
+        if len(tal[thing]) < l:
+            cuts.append(thing)
+    for thing in cuts:
+        del tal[thing]
+    print "DIMENSIONS CUT"
+    return tal
+
+def subnormer(tal,l):
+    tots = [0.0]*l
+    for thing in tal:
+        n = 0
+        while n < l:
+            tots[n] += (tal[thing][n])**2
+            n += 1
+    m = 0
+    while m < l:
+        tots[m] = np.sqrt(tots[m])
+        m += 1
+    for thing in tal:
+        p = 0
+        while p < l:
+            tal[thing][p] = tal[thing][p]/tots[p]
+            p += 1
+    print "TALLIES NORMED"
+    return tal
+
+def varier(tal,l):
+    tups = []
+    ttups = []
+    for thing in tal:
+        if len(tal[thing]) >= l:
+            val = float("%.5f" % np.mean(tal[thing]))
+            tups.append((val,thing))
+            ttups.append((val,rt[int(thing)]))
+    ranks = sorted(tups,reverse=True)
+    tranks = sorted(ttups,reverse=True)
+    outs = []
+    z = raw_input("HOW MANY DIMENSIONS (OUT OF " + str(len(ranks)) + " UNIVERSAL DIMENSIONS): ")
+    print tranks[0:int(z)]
+    for item in ranks[0:int(z)]:
+        outs.append(item[1])
+    return outs,tranks[0:int(z)]
+
+def textspacer(dims,wd,cent):
+    for dim in dims:
+        y = "/home/masteradamo/academy/QueenMerrily/metamatic/corpora/Wikipedia/space2w2NUM/contexts/" + dim + ".txt"
+        z = open(y,'r')
+        n = 0
+        for line in z:
+            n += 1
+            line = line.split("::")
+            val = float(line[1])
+            wd[int(line[0])][0] += ((cent-val)**2)-cent**2
+            wd[int(line[0])][1] += val**2
+            wd[int(line[0])][2] += val*cent
+#            wd[int(line[0])][3].append(uncler(val,y))
+    n = 0
+    return wd
+
+def matter(dims,l,hits):
+    M = np.array([[0.0]*(len(dims))]*l)
+    for n in range (0,len(dims)):
+        y = "/home/masteradamo/academy/QueenMerrily/metamatic/corpora/Wikipedia/space2w2NUM/contexts/" + dims[n] + ".txt"
+    	z = open(y,'r')
+        for line in z:
+            line = line.split("::")
+            if int(line[0]) in hits:
+                M[hits[int(line[0])]][n] = float(line[1])
+    return M
+
+def resulter(wd,l,cent):
+    norm = np.sqrt((cent**2)*l)
+    print "ANCHOR NORM: " + str(norm)
+    for item in wd:
+        item[0] = np.sqrt(item[0]+((cent**2)*l))
+        if item[1] > 0:
+#            print item[1],item[2]
+            item[1] = np.sqrt(item[1])
+            item[2] = np.arccos((item[2])/(item[1]*norm))*180/np.pi
+        else:
+            item[2] = 90.0
+    return wd
+
+def sorter(l,n,rev):
+    if rev == 0:
+        return sorted(l,key=lambda bunch: bunch[n])
+    else:
+        return sorted(l,key=lambda bunch: bunch[n],reverse=True)
+
+def outer(rank,wd,pos,z):
+    out = []
+    for thing in sorter(rank,pos,pos%2)[0:int(z)]:
+        out.append(rt[wd.index(thing)])
+    print out
+
+tr = translater(g)
+print "TRANSLATER BUILT"
+rt = numberer(g,len(tr)+1)
+print "REVERSE TRANSLATER BUILT"
+
+#d = dicter(g,200000)
+while True:
+    x = []
+    wd = []
+    n = 0
+    while n < 200000:
+        wd.append([0.0,0.0,0.0,0.0])
+        n += 1
+    print "BASE DICTIONARY BUILT"
+    while True:
+        y = raw_input("WORD: ")
+        if y != "":
+            x.append(y)
+        else:
+            l = len(x)
+            vecs = vecter(f,x)
+            tal = grouper(vecs)
+            tal = cutter(tal,l)
+            tal = subnormer(tal,l)
+            dims,nims = varier(tal,l)
+            wd = textspacer(dims,wd,5.0)
+            rank = resulter(wd,len(dims),5)
+            z = raw_input("HOW MANY VECTORS: ")
+            print "BY DISTANCE FROM ANCHOR:"
+            outer(rank,wd,0,z)
+            print "BY NORM:"
+            outer(rank,wd,1,z)
+            print "BY ANGLE:"
+            outer(rank,wd,2,z)
+#            tword = raw_input("TARGET WORD FOR COMPARISON: ")
+#            extracter(rank,nims,tword,z)
+            break
