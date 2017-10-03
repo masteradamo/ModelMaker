@@ -20,12 +20,15 @@ def concounter(y1,y2,lim):
                 print m/20000
             m += 1
             line = line[:-2].split("::")
-            sline = line[1].split(",")
-            for pair in sline:
-                pair = pair.split(":")
-                if pair[0] in cont:
-                    cont[pair[0]][line[0]] = pair[1]
-                pair = None
+            try:
+                sline = line[1].split(",")
+                for pair in sline:
+                    pair = pair.split(":")
+                    if pair[0] in cont:
+                        cont[pair[0]][line[0]] = pair[1]
+                    pair = None
+            except IndexError:
+                print "ERROR",line
             line = None
             sline = None
         writer(cont)
