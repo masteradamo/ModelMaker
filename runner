@@ -109,7 +109,8 @@ def varier(tal,l):
 
 def textspacer(dims,wd,cent):
     for dim in dims:
-        y = "/home/masteradamo/academy/QueenMerrily/metamatic/corpora/Wikipedia/space2w2NUM/contexts/" + dim + ".txt"
+#        y = "/home/masteradamo/academy/QueenMerrily/metamatic/corpora/Wikipedia/space2w2NUM/contexts/" + dim + ".txt"
+        y = "space/contexts/" + dim + ".txt"
         z = open(y,'r')
         n = 0
         for line in z:
@@ -126,7 +127,8 @@ def textspacer(dims,wd,cent):
 def matter(dims,l,hits):
     M = np.array([[0.0]*(len(dims))]*l)
     for n in range (0,len(dims)):
-        y = "/home/masteradamo/academy/QueenMerrily/metamatic/corpora/Wikipedia/space2w2NUM/contexts/" + dims[n] + ".txt"
+#        y = "/home/masteradamo/academy/QueenMerrily/metamatic/corpora/Wikipedia/space2w2NUM/contexts/" + dims[n] + ".txt"
+        y = "space/contexts/" + dims[n] + ".txt"
     	z = open(y,'r')
         for line in z:
             line = line.split("::")
@@ -173,6 +175,7 @@ while True:
         wd.append([0.0,0.0,0.0,0.0])
         n += 1
     print "BASE DICTIONARY BUILT"
+    print ""
     while True:
         y = raw_input("WORD: ")
         if y != "":
