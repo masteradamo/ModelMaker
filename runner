@@ -2,15 +2,15 @@ import numpy as np
 import re
 from copy import deepcopy
 from time import sleep
-from conceptnet5.query import query
-from nltk.corpus import wordnet as wn
-import inflect
+#from conceptnet5.query import query
+#from nltk.corpus import wordnet as wn
+#import inflect
 
 f = 'space/tallus.txt'
 g = 'space/numbus.txt'
 #h = '/home/masteradamo/academy/QueenMerrily/metamatic/corpora/DBpedia/DBstract'
 
-peng = inflect.engine()
+#peng = inflect.engine()
 
 def translater(y):
     tr = {}
