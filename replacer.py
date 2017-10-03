@@ -1,6 +1,6 @@
 f = 'space/linus.txt'
 g = 'space/numbus.txt'
-h = 'spcae/numlus.txt'
+h = 'space/numlus.txt'
 
 def dicter(y):
     z = open(y,'r')
