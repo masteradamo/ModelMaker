@@ -1,5 +1,5 @@
 tarfil = raw_input("TARGET FILE PATH: ")
-cwin = raw_input("CONTEXT WINDOW SIZA: ")
+cwin = raw_input("CONTEXT WINDOW SIZE: ")
 
 import stripper #reads - corpus; writes - linus
 stripper.runner(tarfil)
