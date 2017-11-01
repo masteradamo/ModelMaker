@@ -3,14 +3,16 @@ import time
 f = 'space/numlus.txt'
 g = 'space/frequs.txt'
 h = 'space/contextus.txt'
+j = 'space/numbus.txt'
 
 def ranger(y1,y2,clim):
+    ext = len(open(j,'r').readlines())
     cd = {}
     bound = [0,500,2000,4000,7000,13000,25000,50000,100000,200000]
     n = 0
     while n < len(bound)-1:
         lo = bound[n]
-        hi = bound[n+1]
+        hi = min(bound[n+1],ext)
         print "FROM " + str(lo) + " TO " + str(hi)
         wd,cd = liner(y1,cd,lo,hi,clim)
         if n == 0:
@@ -19,6 +21,8 @@ def ranger(y1,y2,clim):
             awriter(y2,wd,lo,hi)
         wd = None
         n += 1
+        if bound[n] > ext:
+            break
     return cd
 
 def bowcounter(line,wd,cd,lo,hi,clim):
