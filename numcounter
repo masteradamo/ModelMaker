@@ -2,12 +2,7 @@ import string
 import time
 
 f = open('space/linus.txt','r')
-
-#g = open('/home/masteradamo/academy/QueenMerrily/metamatic/corpora/Wikipedia/countotus.txt','w')
-#h = open('/home/masteradamo/academy/QueenMerrily/metamatic/corpora/Wikipedia/wordus.txt','w')
-
 h = open('space/numbus.txt','w')
-#j = open('space/newdus.txt','w')
 
 def counter(f):
     wl = {}
@@ -44,6 +39,7 @@ def writer3(l,z):
             if item == str('\xe1\xbc\x80\xce\xbd-'):
                 print "YES!"
         z.write("\n")
+    z.close()
 
 def orderer(wl):
     order = []
@@ -67,7 +63,7 @@ def pointer(wl,tok):
     order = orderer(wl)
     enum = numberer(order)
     for thing in order:
-        if float(tyco)/tyto >= float(toco)/tok:
+        if float(tyco)/tyto >= float(toco)/tok or len(wl) < 200000:
             fc.append(thing)
             tyco -= 1
             toco += thing[0]
@@ -92,8 +88,6 @@ writer3(enum,h)
 #words accepted = 207010
 
 '''SPACE 1'''
-f.close()
-h.close()
 #total para count = 59900000
 
 #linus tokens = 1088317747
