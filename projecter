@@ -6,9 +6,11 @@ from collections import defaultdict as dd
 import matplotlib.pyplot as plt
 from matplotlib import patches as pat
 
-fold = "/home/masteradamo/academy/models/Wikipedia/5x5/"
-red = 2
-vocab = ["google","vape","troll","spam","blog"]
+fold = "/home/masteradamo/academy/models/Wikipedia/5x5/" #the file containing your model
+fs = "/home/masteradamo/academy/materiel/ItCl2018/"
+figs = 10 #the dimension in inches, for both height and width, of your output figure
+red = 2 #don't change this for now
+vocab = ["google","vape","troll","spam","blog"] #the words you'll compare in your projection
 
 fr = fold + "wordus.txt"
 fv = fold + "vectors/"
@@ -20,41 +22,69 @@ vsize = len(listdir(fv))
 print("DICTIONARIES BUILT AND VOCAB COUNTED")
 
 def extracter():
-    syns = wn.synsets(input("BASE WORD: "))
-    if len(syns) > 0:
-        print("SELECT THE NUMBER OF DESIRED DEFINITION:")
-        for n in range(len(syns)):
-            print(str(n) + " = " + syns[n].definition())
-#        choice = [x.name() for x in syns[int(input("CHOICE: "))].lemmas()]
-        choice = [x.name() for x in syns[int(input("CHOICE: "))].lemmas() if x.name() in tr and int(tr[x.name()]) < vsize]
-        print("LEMMAS:",choice)
-        return choice
-    else:
-        print("NOT IN WORDNET VOCABULARY")
-        return extracter()
+    out = []
+    iname = []
+    while True:
+        inp = input("BASE WORD: ")
+        if inp != "":
+            syns = wn.synsets(inp)
+            if len(syns) > 0:
+                iname.append(inp)
+                print("SELECT THE NUMBER OF DESIRED DEFINITION:")
+                for n in range(len(syns)):
+                    print(str(n) + " = " + syns[n].definition())
+                choice = [x.name() for x in syns[int(input("CHOICE: "))].lemmas() if x.name() in tr and int(tr[x.name()]) < vsize]
+                print("LEMMAS:",choice)
+                out.extend(choice)
+    #            return choice
+            else:
+                print("NOT IN WORDNET VOCABULARY")
+        else:
+            print("TOTAL LEMMAS:",list(set(out)))
+            return list(set(out)),iname
 
-def spacer(choice):
+def joiner(choice):
     start = {x.split("::")[0]:float(x.split("::")[1]) for x in open(fv+tr[choice[0]]+".txt").readlines()}
     for word in choice[1:]:
-#        print("WORD",word)
         cont = {x.split("::")[0]:(start[x.split("::")[0]]+float(x.split("::")[1])) for x in open(fv+tr[word]+".txt").readlines() if x.split("::")[0] in start}
         start = cont
-    return([x[1] for x in sorted([(start[y],y) for y in start],reverse=True)])
+    return [x[1] for x in sorted([(start[y],y) for y in start],reverse=True)],"joint"
 
-def outer(space,choice,dims):
-#    mat = {x:{y.split("::")[0]:float(y.split("::")[1]) for y in open(fv+tr[x]+".txt").readlines() if y.split("::")[0] in space} for x in vocab+choice}
+def indyer(choice,dims):
+    stuff = [[x[1] for x in sorted([(float(y.split("::")[1]),y.split("::")[0]) for y in open(fv+tr[z]+".txt").readlines()])[:dims]] for z in choice]
+    out = []
+    while len(out) < dims:
+        for item in stuff:
+            if len(item) > 0:
+                while True:
+                    test = item.pop()
+                    if test not in set(out):
+                        out.append(test)
+                        break
+    return out,"indy"
+
+def outer(space,choice,dims,meth,fts):
     mat = {x:dd(float) for x in vocab}
-#    mat["centroid"] = {x:(sum([mat[y][x] for y in choice])/len(choice)) for x in space}
     for item in mat:
         for tup in open(fv+tr[item]+".txt").readlines():
             mat[item][tup.split("::")[0]] = float(tup.split("::")[1])
-    cat = {x:{y.split("::")[0]:float(y.split("::")[1]) for y in open(fv+tr[x]+".txt").readlines() if y.split("::")[0] in space} for x in choice}
+    cat = {x:dd(float) for x in choice}
+    for item in cat:
+        for tup in open(fv+tr[item]+".txt").readlines():
+            cat[item][tup.split("::")[0]] = float(tup.split("::")[1])
+    rati = sum([np.sqrt(sum([cat[y][x]**2 for x in cat[y]])) for y in cat])/len(cat)
     cent = [sum([cat[x][y] for x in choice])/len(choice) for y in space]
+    cnorm = np.sqrt(sum([x**2 for x in cent]))
+    cent = [x*rati/cnorm for x in cent]
+    cnorm = np.sqrt(sum([x**2 for x in cent]))
     full = [[mat[x][y] for y in space] for x in vocab]
     cnorm = np.sqrt(sum([x**2 for x in cent]))
     mnorm = [np.sqrt(sum([x**2 for x in y])) for y in full]
     coses = [sum([full[y][x]*cent[x] for x in range(len(cent))])/(mnorm[y]*cnorm) for y in range(len(full))]
-    newcent = [np.sqrt((cnorm**2)/(red*np.sqrt(dims))) for x in range(red)]
+    if meth == "joint":
+        newcent = [np.sqrt((len(space)*(cnorm**2))/(2*red*(dims**2))) for x in range(red)]
+    else:
+        newcent = [np.sqrt((len(space)*(cnorm**2))/(3*red*(dims**2))) for x in range(red)]
     newpos = [[(coses[x]*np.sqrt(2))/2,np.sqrt(1-(((coses[x]*np.sqrt(2))/2)**2))] for x in range(len(coses))]
     newfull = [[y*mnorm[x] for y in newpos[x]] for x in range(len(newpos))]
     for n in range(len(vocab)):
@@ -63,39 +93,30 @@ def outer(space,choice,dims):
         print(vocab[n],newfull[n])
     print("CENTROID",newcent)
     lim = max([a for b in newfull for a in b] + newcent) + 2
-#    circ = plt.Circle((0,0), radius = lim-5)
+    plt.figure(figsize=(figs,figs))
     ax = plt.gca()
-#    ax.add_patch(circ)
-    circ = pat.Arc((0,0),(lim*2)-5,(lim*2)-5,angle=90,linewidth=2,fill=False,linestyle="dashed")
-    ax.add_patch(circ)
+    normarc = pat.Arc((0,0),(lim*2)-5,(lim*2)-5,angle=90,linewidth=2,fill=False,linestyle="dashed")
+    ax.add_patch(normarc)
+    distcirc = pat.Arc(newcent,lim/3,lim/3,angle=360,linewidth=1,fill=False,linestyle="dashed")
+    ax.add_patch(distcirc)
     plt.scatter([newcent[0]],[newcent[1]],marker="o",color="b")
     plt.scatter([x[0] for x in newfull],[x[1] for x in newfull],marker="o",color="g")
-#    plt.scatter([x[0] for x in newfull[::2]],[x[1] for x in newfull[::2]],marker="o",color="g")
-#    plt.scatter([x[1] for x in newfull[1::2]],[x[0] for x in newfull[1::2]],marker="o",color="g")
-#    lim = max([a for b in newfull for a in b] + newcent) + 2
     labeled = [[vocab[x]]+newfull[x] for x in range(len(newfull))]
     labeled.append(["CENTROID",newcent[0],newcent[1]])
     for a,b,c in labeled:
         plt.annotate(a,xy=(b,c),xytext=(10,10),textcoords="offset points",ha="right",va="bottom")
     plt.xlim(0,lim)
     plt.ylim(0,lim)
+    plt.tick_params(axis="x",which="both",bottom=False,top=False,labelbottom=False)
+    plt.tick_params(axis="y",which="both",left=False,right=False,labelleft=False)
+    plt.savefig(fts)
     plt.show()
-#    full = [[mat[x][y] for y in space] for x in vocab]
-#    cat = {x:{y.split("::")[0]:float(y.split("::")[1]) for y in open(fv+tr[x]+".txt").readlines() if y.split("::")[0] in space} for x in choice}
-#    full.append([sum([cat[x][y] for x in choice])/len(choice) for y in space])
-#    svd = PCA(red)
-#    proj = svd.fit_transform(np.array(full))
-#    for n in range(len(vocab)):
-#        print(vocab[n],proj[n])
-#    print("CENTROID",proj[-1])
-#    norms = {x:np.sqrt(sum([(mat[x][y])**2 for y in space])) for x in vocab}
-#    point = {x:(sum([mat[y][x] for y in choice])/len(choice)) for x in space}
-#    ptnor = np.sqrt(sum([point[x]**2 for x in point]))
-#    ratio = sum([np.sqrt(sum([mat[x][y] for y in space])) for x in choice])/len(choice)
 
 while True:
-    choice = extracter()
+    choice,iname = extracter()
+    fts = fs + "-".join(iname)
     dims = int(input("NUMBER OF DIMENSIONS: "))
-    space = spacer(choice)[:dims]
-    outer(space,choice,dims)
+#    space,meth = indyer(choice,dims)[:dims]
+    space,meth = joiner(choice)[:dims]
+    outer(space,choice,dims,meth,fts)
     print()
