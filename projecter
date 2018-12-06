@@ -36,7 +36,6 @@ def extracter():
                 choice = [x.name() for x in syns[int(input("CHOICE: "))].lemmas() if x.name() in tr and int(tr[x.name()]) < vsize]
                 print("LEMMAS:",choice)
                 out.extend(choice)
-    #            return choice
             else:
                 print("NOT IN WORDNET VOCABULARY")
         else:
@@ -47,11 +46,21 @@ def joiner(choice):
     start = {x.split("::")[0]:float(x.split("::")[1]) for x in open(fv+tr[choice[0]]+".txt").readlines()}
     for word in choice[1:]:
         cont = {x.split("::")[0]:(start[x.split("::")[0]]+float(x.split("::")[1])) for x in open(fv+tr[word]+".txt").readlines() if x.split("::")[0] in start}
-        start = cont
+        start = {x:cont[x]+start[x] for x in cont}
     return [x[1] for x in sorted([(start[y],y) for y in start],reverse=True)],"joint"
 
+def normer(choice):
+    vecs = [{x.split("::")[0]:float(x.split("::")[1]) for x in open(fv+tr[y]+".txt").readlines()} for y in choice]
+    allin = [x for x in vecs[0] if sum([x in y for y in vecs[1:]]) == len(vecs[1:])]
+#    print("ALLIN",allin)
+    subvecs = [[y[x] for x in allin] for y in vecs]
+    norms = [np.sqrt(sum([x**2 for x in y])) for y in subvecs]
+    normvecs = [[y/norms[x] for y in subvecs[x]] for x in range(len(subvecs))]
+    print("NV",len(normvecs),len(normvecs[0]))
+    return [x[1] for x in sorted([(sum([y[x] for y in normvecs]),allin[x]) for x in range(len(allin))],reverse=True)],"joint"
+
 def indyer(choice,dims):
-    stuff = [[x[1] for x in sorted([(float(y.split("::")[1]),y.split("::")[0]) for y in open(fv+tr[z]+".txt").readlines()])[:dims]] for z in choice]
+    stuff = [[x[1] for x in sorted([(float(y.split("::")[1]),y.split("::")[0]) for y in open(fv+tr[z]+".txt").readlines()],reverse=True)[:dims]] for z in choice]
     out = []
     while len(out) < dims:
         for item in stuff:
@@ -81,10 +90,7 @@ def outer(space,choice,dims,meth,fts):
     cnorm = np.sqrt(sum([x**2 for x in cent]))
     mnorm = [np.sqrt(sum([x**2 for x in y])) for y in full]
     coses = [sum([full[y][x]*cent[x] for x in range(len(cent))])/(mnorm[y]*cnorm) for y in range(len(full))]
-    if meth == "joint":
-        newcent = [np.sqrt((len(space)*(cnorm**2))/(2*red*(dims**2))) for x in range(red)]
-    else:
-        newcent = [np.sqrt((len(space)*(cnorm**2))/(3*red*(dims**2))) for x in range(red)]
+    newcent = [np.sqrt((len(space)*(cnorm**2))/(2*red*(dims**2))) for x in range(red)]
     newpos = [[(coses[x]*np.sqrt(2))/2,np.sqrt(1-(((coses[x]*np.sqrt(2))/2)**2))] for x in range(len(coses))]
     newfull = [[y*mnorm[x] for y in newpos[x]] for x in range(len(newpos))]
     for n in range(len(vocab)):
@@ -116,7 +122,9 @@ while True:
     choice,iname = extracter()
     fts = fs + "-".join(iname)
     dims = int(input("NUMBER OF DIMENSIONS: "))
-#    space,meth = indyer(choice,dims)[:dims]
-    space,meth = joiner(choice)[:dims]
+#    space,meth = joiner(choice)
+#    space,meth = normer(choice)
+    space,meth = indyer(choice,dims)[:dims]
+    space = space[:dims]
     outer(space,choice,dims,meth,fts)
     print()
